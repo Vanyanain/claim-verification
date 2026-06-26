@@ -1,0 +1,29 @@
+# Dataset (HackerRank IP — do NOT publish)
+dataset/
+*.csv
+
+# Secrets
+.env
+*.key
+
+# Cache
+.cache/
+code/.cache/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Submission artifacts
+chat_transcript.txt
+log.txt
+submission_code.zip
+output.csv
+
+# OS / editor junk
+.DS_Store
+.idea/
+.vscode/
+*.swp
