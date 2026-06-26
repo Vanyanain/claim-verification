@@ -1,358 +1,173 @@
-# Ecommerce Management DBMS Project
+# Multi-Modal Damage Claim Verification
 
-As a part of our University Curriculum, we made this project for Database Management Systems (DBMS) - ITE1003.<br>
-This project contains theoretical as well as implementation in SQL.<br>
-If you liked the repo do :star: it. 
+> **HackerRank Orchestrate — June 2026 · Ranked #55 / 1,773 (top 3%)**
 
-## Pre-requisite
+A system that verifies insurance-style damage claims by combining submitted **images**
+(primary source of truth), a short **claim conversation**, **user history**, and a
+**minimum-evidence checklist** — and decides whether the images **support** the claim,
+**contradict** it, or provide **not enough information**.
 
-Oracle SQL Server (or) Oracle Community Edition
+Built in 24 hours, entirely on **free-tier APIs**. Total cost: **$0.00**.
 
-## Contents
+---
 
-- Mini world and Project Description
-- Basic structure
-  - Functional requirements
-  - Entity Relation (ER) diagram and constraints
-  - Relational database schema
-- Implementation
-  - Creating tables
-  - Inserting data
-- Queries
-  - Basic queries
-  - PL/SQL function
-  - Trigger function
+## The problem
 
-## 1. Mini world and Description
+Each claim is about one of three object types — **car**, **laptop**, or **package** —
+and arrives with one or more photos plus a customer chat transcript. The system must
+decide, per claim, across 14 structured output fields:
 
-In this modern era of online shopping no seller wants to be left behind, moreover due to its simplicity the shift from offline selling model to an online selling model is witnessing a rampant growth.<br>
-Therefore, as an engineer our job is to ease the path of this transition for the seller.
-Amongst many things that an online site requires the most important is a database system. Hence in this project we are planning to design a database where small clothing sellers can sell their product online.
+- Is the image evidence sufficient to evaluate the claim?
+- What is the visible issue type and the relevant object part?
+- Is the claim **supported**, **contradicted**, or **not_enough_information**?
+- Which risk flags apply (blurry image, wrong object, claim mismatch, possible
+  manipulation, prompt-injection text inside the image, user-history risk, …)?
+- What is the severity?
 
-## 2. Basic Structure
+Images are the primary source of truth. User history can add *risk context* but must
+never override clear visual evidence on its own.
 
-### 2.1 Functional requirement
+---
 
-- A new user can register on the website.
-- A customer can see details of the product present in the cart
-- A customer can view his order history.
-- Admin can start a sale with certain discount on every product.
-- Customer can filter the product based on the product details.
-- A customer can add or delete a product from the cart.
-- A seller can unregister/ stop selling his product.
-- A seller/ customer can update his details.
-- Admin can view the products purchased on particular date.
-- Admin can view number of products sold on a particular date.
-- A customer can view the total price of product present in the cart unpurchased.
-- Admin can view details of customer who have not purchased anything.
-- Admin can view total profit earned from the website.
+## Architecture
 
-### 2.2 Entity Relation Diagram
-
-![ER diagram](https://github.com/bhumijgupta/Ecommerce-management-DBMS-project/raw/master/images/new_er.png)
-
-### 2.3 Relational Database Schema
-
-![Relational diagram](https://github.com/bhumijgupta/Ecommerce-management-DBMS-project/raw/master/images/new_relational.png)
-
-## 3. Implementation
-
-You can directly copy and paste all the commands from the text given here into the SQL console to create and insert values into your table.
-
-### 3.1 Creating Tables
-
-```sql
-    CREATE TABLE Cart
-    (
-        Cart_id VARCHAR(7) NOT NULL,
-        PRIMARY KEY(Cart_id)
-    );
-
-    CREATE TABLE Customer
-    (
-        Customer_id VARCHAR(6) NOT NULL,
-        c_pass VARCHAR(10) NOT NULL,
-        Name VARCHAR(20) NOT NULL,
-        Address VARCHAR(20) NOT NULL,
-        Pincode NUMBER(6) NOT NULL,
-        Phone_number_s number(10) NOT NULL,
-        PRIMARY KEY (Customer_id),
-        Cart_id VARCHAR(7) NOT NULL,
-        FOREIGN KEY(Cart_id) REFERENCES cart(Cart_id)
-    );
-
-    CREATE TABLE Seller
-    (
-        Seller_id VARCHAR(6) NOT NULL,
-        s_pass VARCHAR(10) NOT NULL,
-        Name VARCHAR(20) NOT NULL,
-        Address VARCHAR(10) NOT NULL,
-        PRIMARY KEY (Seller_id)
-    );
-
-    CREATE TABLE Seller_Phone_num
-    (
-        Phone_num NUMBER(10) NOT NULL,
-        Seller_id VARCHAR(6) NOT NULL,
-        PRIMARY KEY (Phone_num, Seller_id),
-        FOREIGN KEY (Seller_id) REFERENCES Seller(Seller_id)
-        ON DELETE CASCADE
-    );
-
-    CREATE TABLE Payment
-    (
-        payment_id VARCHAR(7) NOT NULL,
-        payment_date DATE NOT NULL,
-        Payment_type VARCHAR(10) NOT NULL,
-        Customer_id VARCHAR(6) NOT NULL,
-        Cart_id VARCHAR(7) NOT NULL,
-        PRIMARY KEY (payment_id),
-        FOREIGN KEY (Customer_id) REFERENCES Customer(Customer_id),
-        FOREIGN KEY (Cart_id) REFERENCES Cart(Cart_id),
-        total_amount numeric(6)
-    );
-
-    CREATE TABLE Product
-    (
-        Product_id VARCHAR(7) NOT NULL,
-        Type VARCHAR(7) NOT NULL,
-        Color VARCHAR(15) NOT NULL,
-        P_Size VARCHAR(2) NOT NULL,
-        Gender CHAR(1) NOT NULL,
-        Commission NUMBER(2) NOT NULL,
-        Cost NUMBER(5) NOT NULL,
-        Quantity NUMBER(2) NOT NULL,
-        Seller_id VARCHAR(6),
-        PRIMARY KEY (Product_id),
-        FOREIGN KEY (Seller_id) REFERENCES Seller(Seller_id)
-        ON DELETE SET NULL
-    );
-
-    CREATE TABLE Cart_item
-    (
-        Quantity_wished NUMBER(1) NOT NULL,
-        Date_Added DATE NOT NULL,
-        Cart_id VARCHAR(7) NOT NULL,
-        Product_id VARCHAR(7) NOT NULL,
-        FOREIGN KEY (Cart_id) REFERENCES Cart(Cart_id),
-        FOREIGN KEY (Product_id) REFERENCES Product(Product_id),
-        Primary key(Cart_id,Product_id)
-    );
-
-    alter table Cart_item add purchased varchar(3) default 'NO';
-```
-
-### 3.2 Inserting Values
-
-These are some demo values. Full data will be updated in future commits
-
-```sql
-    insert into Cart values('crt1011');
-
-    insert into Customer values('cid100','ABCM1235','rajat','G-453','632014',9893135876, 'crt1011');
-
-    insert into Seller values('sid100','12345','aman','delhi cmc');
-
-    insert into Product values('pid1001','jeans','red','32','M',10,10005,20,'sid100');
-
-    insert into Seller_Phone_num values('9943336206','sid100');
-
-    insert into Cart_item values(3,to_date('10-OCT-1999','dd-mon-yyyy'),'crt1011','pid1001','Y');
-
-    insert into Payment values('pmt1001',to_date('10-OCT-1999','dd-mon-yyyy'),'online','cid100','crt1011',NULL);
-```
-
-## 4. Queries
-
-### 4.1 Basic Queries
-
-#### If the customer wants to see details of product present in the cart
-
-```sql
-    select * from product where product_id in(
-        select product_id from Cart_item where (Cart_id in (
-            select Cart_id from Customer where Customer_id='cid100'
-        ))
-    and purchased='NO');
-```
-
-#### If a customer wants to see order history
-
-```sql
-    select product_id,Quantity_wished from Cart_item where (purchased='Y' and Cart_id in (select Cart_id from customer where Customer_id='cid101'));
-```
-
-#### Customer wants to see filtered products on the basis of size,gender,type
-
-```sql
-    select product_id, color, cost, seller_id from product where (type='jeans' and p_size='32' and gender='F' and quantity>0)
-```
-
-#### If customer wants to modify the cart
-
-```sql
-    delete from cart_item where (product_id='pid1001' and Cart_id in (select cart_id from Customer where Customer_id='cid100'));
-```
-
-#### If a seller stops selling his product
-
-```sql
-    delete  from seller where seller_id = 'sid100';
-    update product set quantity = 00 where seller_id is NULL;
-```
-
-#### If admin want to see what are the product purchased on the particular date
-
-```sql
-    select product_id from cart_item where (purchased='Y' and date_added='12-dec-2018');
-```
-#### How much product sold on the particular date
-
-```sql
-    select count(product_id) count_pid,date_added from Cart_item where purchased='Y'  group by(date_added);
-```
-#### If a customer want to know the total price present in the cart
-
-```sql
-    select sum(quantity_wished * cost) total_payable from product p join cart_item c on p.product_id=c.product_id where c.product_id in (select product_id from cart_item where cart_id in(select Cart_id from customer where customer_id='cid101') and purchased=’Y’);
-```
-#### Show the details of the customer who has not purchased any thing
-
-```sql
-    Select * from customer where customer_id not in (select customer_id from Payment);
-```
-#### Find total profit of the website from sales.
-
-```sql
-    select sum(quantity_wished * cost * commission/100) total_profit from product p join cart_item c on p.product_id=c.product_id where purchased=’Y’;
-```
-
-### 4.2 PL/SQL function
-#### Procedure which returns the type of product with  the cost less than the given cost
-
-```sql
-    create or replace procedure cost_filter(c in number,t in varchar)
-    is
-    cs product.cost%type;
-    ty product.type%type;
-    id product.product_id%type;
-    cursor cf is
-    select product_id,cost,type from product where cost<c and type=t;
-    begin
-    open cf;
-    loop
-    fetch cf into id,cs,ty;
-    exit when cf%notfound;
-    dbms_output.put_line('Product' || id || 'has cost ' || cs || ' and the type is' || ty);
-    end loop;
-    close cf;
-    exception
-    when no_data_found then
-    dbms_output.put_line('Sorry no such products exist');
-    end;
+**One vision-model call per claim, wrapped in a deterministic rule layer.**
 
 ```
-
-#### Function which returns total number of products which a particular seller sells
-
-```sql
-    create or replace function totalProducts(sId in varchar)
-    return number
-    is
-    total number(2):=0;
-    begin
-    select count(*) into total
-    from product
-    where seller_id=sId;
-    return total;
-    end;
-    /
-```
-Function execution:
-```sql
-    declare
-    c number(2);
-    begin
-    c:=totalProducts('sid102');
-    dbms_output.put_line('Total products is : '|| c);
-    end;
+claims.csv ─┐  for each claim:
+            ├─► evidence.py     pick the minimum-evidence rules that apply
+            │                   (deterministic keyword routing — no API call)
+            ├─► main.py         build a prompt: claim + extracted customer
+            │                   assertions + requirements + user history
+            ├─► model_client.py ONE vision call → strict JSON
+            │                   (cached by image-hash; retry + throttle)
+            └─► rules.py        coerce values, enforce hard constraints,
+                                promote mismatches, inject history risk
+                                        │
+                                        ▼
+                                   output.csv
 ```
 
-#### Procedure which returns the total quantity of product with the given ID
-Procedure with exception handling
-```sql
-    create or replace procedure prod_details(p_id in varchar)
-    is
-    quan number(2);
-    begin
-    select quantity into quan from product where product_id=p_id;
-    exception
-    when no_data_found then
-    dbms_output.put_line('Sorry no such product exist !!');
-    end;
-    /
-```
-### 4.3 Triggers
-#### Trigger that will execute before inserting new customer to database and inserting a new cartId to the cart_items table
-Function to count number of cart items
-```sql
-    create or replace function numCartId(cd in varchar)
-    return number
-    is
-    total number(2):=0;
-    begin
-    select count(*) into total
-    from cart_item
-    where cart_id=cd;
-    return total;
-    end;
-    Trigger
-    Create or replace trigger before_customer
-    before insert
-    on
-    customer
-    for each row
-    declare
-    c varchar(10);
-    n number(2);
-    begin
-    c:= :new.cart_id;
-    n:=numCartId(c);
-    if n>0 then
-    dbms_output.put_line('Sorry');
-    end if;
-    insert into cart values(c);
-    end;
-```
-#### Trigger to update the total amount of user everytime he adds something to payment table
-```sql
-    create or replace function total_cost(cId in varchar)
-    return number
-    is
-    total number(2) :=0;
-    begin
-    select sum(cost) into total from product,cart_item where product.product_id=cart_item.product_id and cart_id=cId;
-    return total;
-    end;
+### Why this shape
 
-    create or replace trigger before_pay_up
-    before insert
-    on
-    payment
-    for each row
-    declare
-    total number(3);
-    begin
-    total :=total_cost(:new.cart_id);
-    insert into payment values(:new.payment_id,:new.payment_date,:new.payment_type,:new.customer_id,:new.cart_id,total);
-    end;
+- **Vision model handles perception.** A single call sees *all* images for a claim
+  together (required for "at least one image shows the part" logic) and returns
+  structured JSON.
+- **Rules handle logic.** Constraints that shouldn't depend on model whim are
+  enforced in code: `evidence_standard_met=false ⇒ not_enough_information`;
+  `not_enough_information ⇒ severity=unknown`; mismatch flags get promoted to
+  `contradicted`; history risk is injected **additively** and never overrides the
+  visual verdict.
+- **Schema is guaranteed.** Every value is coerced into the allowed set before it
+  reaches `output.csv` — a hallucinated label can never appear in the output.
+
+---
+
+## Results
+
+Evaluated on the labeled sample set (per-field exact-match accuracy):
+
+| Field | Accuracy |
+|---|---|
+| valid_image | 90% |
+| evidence_standard_met | 85% |
+| claim_status | **70%** |
+| supporting_image_ids | 70% |
+| object_part | 60% |
+| severity | 45% |
+| issue_type | 40% |
+| risk_flags | 20% (Jaccard 0.43) |
+
+`claim_status` per-class F1: **supported 0.85**, **contradicted 0.44**,
+not_enough_information 0.40.
+
+- **Zero schema violations** across all 44 test rows.
+- **Total API cost: $0.00** (Groq free tier).
+
+See [`code/evaluation/evaluation_report.md`](code/evaluation/evaluation_report.md)
+for the full strategy comparison and operational analysis.
+
+---
+
+## Tech stack
+
+- **Language:** Python 3.12
+- **Vision model:** Llama 4 Scout (`meta-llama/llama-4-scout-17b-16e-instruct`) via
+  **Groq** free tier, called through the OpenAI-compatible SDK
+- **Secondary provider:** Gemini 2.5 Flash via `google-genai` (one-env-var swap)
+- **No heavy frameworks** — no LangChain, no pandas. Standard library + the API SDK.
+- **Caching:** content-hash keyed disk cache (idempotent, resumable, free re-runs)
+- **Reliability:** exponential backoff with jitter + client-side rate-limit throttle
+
+---
+
+## Engineering highlights
+
+- **Prompt-injection defense.** Text inside an image is treated as data, never
+  instructions. Injection attempts are flagged `text_instruction_present` and ignored.
+- **Content-hash caching.** A SHA-256 over (provider + model + prompt + image bytes)
+  keys each response. A crashed run resumes from cache instead of re-billing or
+  restarting — which is exactly what saved the final run when it hit rate limits.
+- **Provider portability.** The model client abstracts Groq and Gemini behind one
+  interface, so switching providers mid-build was a single environment variable.
+- **Free-tier rate-limit handling.** A client-side throttle plus exponential backoff
+  with jitter let the full run complete despite repeated TPM limits.
+
+---
+
+## Run it
+
+```bash
+cd code
+pip install -r requirements.txt
+export CLAIM_PROVIDER=groq
+export GROQ_API_KEY=your_key            # from https://console.groq.com/keys
+export CLAIM_MODEL=meta-llama/llama-4-scout-17b-16e-instruct
+
+# Evaluate on the labeled sample set
+python evaluation/main.py --image-root ../dataset
+
+# Produce predictions for the test set
+python main.py --claims ../dataset/claims.csv --out ../output.csv \
+  --image-root ../dataset --concurrency 1
 ```
-## Contributors
-Do check the contributors to follow some awesome projects
 
-- [@bhumijgupta](https://www.github.com/bhumijgupta)
-- [@YashMeh](https://www.github.com/YashMeh)
-- [@roney_b](https://www.github.com)
+> The dataset is HackerRank's intellectual property and is **not** included in this
+> repo. The code expects it under `dataset/` at the paths referenced by the CSVs.
 
-> Feel free to fork the repository and contribute to this project.
-You made it till the end. Brofist :punch:!!!
+There's also an offline `--mock` mode that exercises the full pipeline with no key
+and no API calls (validates plumbing, not visual accuracy).
+
+---
+
+## Repo layout
+
+```
+code/
+├── main.py            pipeline entry point
+├── schema.py          allowed values + coercion (single source of truth)
+├── data.py            CSV loading, conversation parsing, claim-family routing
+├── evidence.py        minimum-evidence requirement retrieval
+├── model_client.py    vision client: Groq + Gemini, caching, retry, throttle, mock
+├── rules.py           deterministic rule layer
+├── prompts/
+│   └── system_prompt.txt
+├── evaluation/
+│   ├── main.py        accuracy harness vs the labeled sample set
+│   └── evaluation_report.md
+└── requirements.txt
+```
+
+---
+
+## What I'd improve with more time
+
+1. **Stronger vision model.** Llama 4 Scout is preview-grade; a stronger model is the
+   single highest-leverage improvement, especially for contradiction detection.
+2. **Few-shot examples** in the prompt to push the model off `unknown` on `issue_type`
+   and `risk_flags`.
+3. **Self-consistency** — 3 calls per claim with a majority vote per field.
+
+---
+
+*Built for HackerRank Orchestrate, June 2026. Final rank #55 of 1,773.*
