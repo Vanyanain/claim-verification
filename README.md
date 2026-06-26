@@ -1,7 +1,5 @@
 # Multi-Modal Damage Claim Verification
 
-> **HackerRank Orchestrate — June 2026 · Ranked #55 / 1,773 (top 3%)**
-
 A system that verifies insurance-style damage claims by combining submitted **images**
 (primary source of truth), a short **claim conversation**, **user history**, and a
 **minimum-evidence checklist** — and decides whether the images **support** the claim,
